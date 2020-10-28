@@ -49,11 +49,23 @@
 }
 
 .resetButton{
-	margin-left: 310px;
+	margin-left: 425px;
 	font-size: 30px;
 }
 
 .resetButton:hover{
+	transform: scale(1.2);
+	transition: transform 0.15s ease-in-out;
+	cursor: pointer;
+}
+
+.createUserButton{
+	margin-left: 420px;
+	font-size: 30px;
+	margin-bottom: 5px;
+}
+
+.createUserButton:hover{
 	transform: scale(1.2);
 	transition: transform 0.15s ease-in-out;
 	cursor: pointer;
