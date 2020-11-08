@@ -6,6 +6,10 @@
 	border: 3px solid black;
 }
 
+.board.disabled{
+	pointer-events: none;
+}
+
 .boxes{
 	float: left;
 	height: 133px;

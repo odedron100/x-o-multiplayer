@@ -16,45 +16,28 @@ var firebaseConfig = {
 
 const database = firebase.database();
 
-// const USERS_COLLECTION_NAME = 'opponent';
 const USERS_COLLECTION = 'users';
-const STEPS_COLLECTION = 'steps';
+const BOXES_COLLECTION = 'boxes';
 const CURRENT_PLAYER = 'currentPlayer';
 
 class DBManager {
-	// static getSingleItem = (itemName) => {
-	// 	return JSON.parse(localStorage.getItem(itemName));
-	// }
 
-	// static setSingleItem = (itemName, newItem) => {
-	// 	localStorage.setItem(itemName, JSON.stringify(newItem));
-	// }
-
-
-	static getUsers = () => {	
-		const promise = database.ref(USERS_COLLECTION).once('value').then((snap) => {
-			return snap.val();
-		})
-		return promise;
+	static getUsers = (onNewUserAdded) => {
+		database.ref(USERS_COLLECTION).on('value', (snap) => onNewUserAdded(snap.val()));
 	}
+	// static getUsers = () => {
+	// 	const promise = database.ref(USERS_COLLECTION).once('value').then((snap) => {
+	// 		return snap.val() || [];
+	// 	})
 
-	// static getUser = (id) => {
-	// 	const promise = database.ref(`${USERS_COLLECTION_NAME}/${id}`).once('value').then((snap) => {
-	// 		const user = snap.val();
-
-	// 		if (!user) {
-	// 			throw new Error("User not found!");
-	// 		}
-	// 		return {...user, id};
-	// 	});
-
-		// return promise;
+	// 	return promise;
 	// }
+	
 
-	static createNewUser = (user) => {;
-		return database.ref(USERS_COLLECTION).push(user).then((snap) => {
+	static createNewUser = (userName) => {;
+		return database.ref(USERS_COLLECTION).push({name: userName}).then((snap) => {
 			return {
-				...user,
+				name: userName,
 				id: snap.key
 			};
 		});
@@ -65,42 +48,38 @@ class DBManager {
 		});
 	}
 
-	// static createNewUser = (user) => {;
-	// 	return database.ref(USERS_COLLECTION_NAME).push(user).then((snap) => {
-	// 		return {
-	// 			...user,
-	// 			id: snap.key
-	// 		};
-	// 	});
-
-
-	// }
-
-	// static getAgents = () => {
-	// 	return DBManager.getFromCollection(AGENTS_COLLECTION_NAME);
-	// }
-
-	// static setAgents = (somethingToWrite) => {
-	// 	DBManager.setInCollection(AGENTS_COLLECTION_NAME, somethingToWrite);
-	// }
-
-	// static getMessages = (userId, onNewMessageAdded) => {
-	// 	database.ref(`chats/${userId}/${MESSAGES_COLLECTION_NAME}`).on('value', (snap) => {
-	// 		onNewMessageAdded(snap.val());
-	// 	});
-	// }
-
-	// static setSteps = (userId, step) => {
-	// 	database.ref(`chats/${userId}/${MESSAGES_COLLECTION_NAME}`).set(messages);
-	// }
-
-	static getCurrentUser = () => {
-		return DBManager.getSingleItem(CURRENT_PLAYER);
+	
+	static getCurrentUser = (onCurrentUserChange) => {	
+		database.ref(CURRENT_PLAYER).on('value', (snap) => {
+			onCurrentUserChange(snap.val());
+		})
 	}
 
-	static setCurrentUser = (newUser) => {
-		DBManager.setSingleItem(CURRENT_PLAYER, newUser);
+	static setCurrentUser = (currentUser) => {
+		console.log('currentUser', currentUser);
+		return database.ref(CURRENT_PLAYER).set(currentUser).then(() => {
+		});
 	}
+
+	
+	static getBoxes = () => {
+		database.ref(BOXES_COLLECTION).once('value').then((snap) => {
+			// return snap.val() || this.props.boxes;
+			return snap.val();
+		});
+	}
+
+	static getBoxesLive = (onValueAdded) => {
+		database.ref(BOXES_COLLECTION).on('value' , (snap) => {
+			onValueAdded(snap.val());
+		});
+		
+	}
+
+	static setBoxes = (boxes) => {
+		database.ref(BOXES_COLLECTION).set(boxes).then(()=>{
+		});
+	}	
 }
 
 export default DBManager;

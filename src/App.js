@@ -20,48 +20,81 @@ const boxesElement = [
 class App extends React.Component {
 state = {
   boxes: boxesElement,
-  users:{},
-  currentUser:'',
+  users: {},
+  currentUser:null,
+  thisPageUser: null,
 }
 
 numberOfTurn = 0;
 createMessage = false;
 
-// componentDidMount() {
-//      DBManager.getUsers().then((users) => {
-        
-//       });
-// }    
+componentDidMount() {
+
+  DBManager.getUsers((users) => {
+    if (users && Object.keys(users).length > 0) {
+        this.setState({users});
+        this.numberOfTurn = 0;
+
+        DBManager.setCurrentUser(Object.keys(users)[0]);
+        this.setState({currentUser:Object.keys(users)[0]});   
+    }
+
+    DBManager.getBoxesLive((boxes)=> {
+      if (boxes) {
+        this.setState({boxes});
+        this.numberOfTurn ++;
+      }
+    });   
+  });
+
+  DBManager.getCurrentUser((currentUser) => {
+    this.setState({currentUser});
+  })
+
+}    
+
 
 createUsers = () =>{
-  DBManager.getUsers().then((users) => {
-    this.setState({users});
-  });
-}
-// createUsers = () =>{
-//   DBManager.getUsers().then((users) => {
-//     if (users.length < 2) {
-//       const userName = prompt('What is your name?');
-//       const newUser =  {
-//         name: userName
-//       }
+  const {users} = this.state;
 
-//       DBManager.createNewUser(newUser).then(user => {
-//         this.setState({currentUser: user});
-//       });
-//     }
-//     else{
-//       alert('Please wait, there are already 2 players');
-//     }
-//   }); 
-// }
+  if (Object.keys(users).length < 2) {
+    const newUserName = prompt('What is your name?');
+
+    DBManager.createNewUser(newUserName).then(user => {
+      const {users} = this.state; 
+      
+      this.setState({
+        users: {
+          ...users, 
+          [user.id]: user
+        },
+        thisPageUser: user.id
+      });
+    });
+  }
+  else{
+    alert('Please wait, there are already 2 players');
+  } 
+}
 
 
 createXorO = (title) =>{
-  this.numberOfTurn ++;
+  const{users} = this.state;
+  if (users.length < 2) {
+    return ;
+  }
+
+  if (this.numberOfTurn % 2 === 0) {
+    DBManager.setCurrentUser(Object.keys(this.state.users)[0]);
+    this.setState({currentUser:Object.keys(this.state.users)[0]});
+  }
+  else{
+    DBManager.setCurrentUser(Object.keys(this.state.users)[1]);
+    this.setState({currentUser:Object.keys(this.state.users)[1]});
+  }
 
   
-  if (!this.state.isMyTurn && this.state.player === 'Me') {
+  if (Object.keys(this.state.users).length === 2 && this.state.currentUser === Object.keys(this.state.users)[0]) {
     const boxesAfterClickedX = this.state.boxes;
     const boxesAfterClickedXToChange = boxesAfterClickedX.find(box=> {
         return box.title === title;
@@ -70,10 +103,11 @@ createXorO = (title) =>{
     boxesAfterClickedXToChange.value  = 'X';
 
     this.setState({boxes: boxesAfterClickedX});
-    this.setState({isMyTurn: false});
+    DBManager.setBoxes(this.state.boxes);
+    // this.lastValue = 'X';
     
   }
-  else if (this.state.isMyTurn && this.props.player === 'Opponent') {
+  else if (Object.keys(this.state.users).length === 2 && this.state.currentUser === Object.keys(this.state.users)[1]) {
     const boxesAfterClickedO = this.state.boxes;
     const boxesAfterClickedOToChange = boxesAfterClickedO.find(box=> {
         return box.title === title;
@@ -82,6 +116,8 @@ createXorO = (title) =>{
     boxesAfterClickedOToChange.value  = 'O';
 
     this.setState({boxes: boxesAfterClickedO}); 
+    DBManager.setBoxes(this.state.boxes);
+    // this.lastValue = 'O';
     
   }
   const boxes = this.state.boxes;
@@ -163,15 +199,29 @@ reset = () =>{
 
   const resetValues = boxes.map((boxes) => boxes.value = '');
   this.setState({boxes:boxes});
+  DBManager.setBoxes(this.state.boxes);
 
 }
 
 
-  render = () => { 
-
+  render = () => {
+    const {users,boxes,currentUser, thisPageUser} = this.state;
+    
+    console.log('this.numberOfTurn', this.numberOfTurn);
+   
     return (
       <div >
-        <Board boxes={this.state.boxes} createXorO={this.createXorO} findWinner={this.findWinner} messageWinner={this.messageWinner} reset={this.reset}/>
+        <div>
+          Number of player: <span>{Object.keys(users).length}</span>
+          {users && Object.keys(users).map((userKey, index) => {
+            const currentUser = users[userKey];
+            console.log('currentUser', currentUser);
+
+            return <div key={userKey}>Player {index + 1}: {currentUser.name}</div>
+          })}
+        </div>
+        {currentUser && <div>Current Player: {users[currentUser].name}</div>}
+        <Board boxes={this.state.boxes} createXorO={this.createXorO} findWinner={this.findWinner} messageWinner={this.messageWinner} reset={this.reset} isMyTurn={thisPageUser === currentUser}/>
         <div className = 'message'>{this.createMessage === true && this.message}</div>
         <button className='createUserButton' onClick={this.createUsers} >createUser</button>
         <button className = 'resetButton' onClick={this.reset} >RESTART</button>
